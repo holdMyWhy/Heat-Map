@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dubai Real Estate - Sales & Rentals Map</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            transition: background-color 0.3s ease;
+        }
+
+        body.dark-mode {
+            background: #0a0e27;
+        }
+
+        body.light-mode {
+            background: #f8fafc;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+
+        .mode-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 12px 16px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .dark-mode .mode-toggle {
+            background: rgba(17, 24, 39, 0.98);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .mode-toggle-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .dark-mode .mode-toggle-label {
+            color: #9ca3af;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "☀️";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+            content: "🌙";
+        }
+
+        .view-selector {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 6px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            gap: 6px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .dark-mode .view-selector {
+            background: rgba(17, 24, 39, 0.98);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .view-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: #6b7280;
+        }
+
+        .dark-mode .view-btn {
+            color: #9ca3af;
+        }
+
+        .view-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            z-index: 1000;
+            max-width: 320px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .dark-mode .controls {
+            background: rgba(17, 24, 39, 0.98);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .controls h2 {
+            margin-bottom: 20px;
+            font-size: 20px;
+            color: #111;
+            font-weight: 700;
+        }
+
+        .dark-mode .controls h2 {
+            color: #f9fafb;
+        }
+
+        .filter-group {
+            margin-bottom: 16px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dark-mode .filter-group label {
+            color: #9ca3af;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .dark-mode .filter-group select,
+        .dark-mode .filter-group input {
+            background: #1f2937;
+            border-color: #374151;
+            color: #f9fafb;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .dark-mode .stats-grid {
+            border-top-color: #374151;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .stat-box.green {
+            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+        }
+
+        .stat-box.orange {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            z-index: 1000;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .dark-mode .legend {
+            background: rgba(17, 24, 39, 0.98);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .legend h3 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: #111;
+            font-weight: 700;
+        }
+
+        .dark-mode .legend h3 {
+            color: #f9fafb;
+        }
+
+        .legend-scale {
+            display: flex;
+            height: 24px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .legend-scale div {
+            flex: 1;
+        }
+
+        .legend-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .dark-mode .legend-labels {
+            color: #9ca3af;
+        }
+
+        .toggle-btn {
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 12px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+
+        .price-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .price-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .price-label {
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .change-label {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .change-label.positive {
+            background: #10b981;
+            color: white;
+        }
+
+        .change-label.negative {
+            background: #ef4444;
+            color: white;
+        }
+
+        .change-label.neutral {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .leaflet-popup-content {
+            margin: 0;
+            min-width: 300px;
+        }
+
+        .popup-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
+            color: white;
+        }
+
+        .popup-title {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .popup-subtitle {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .popup-body {
+            padding: 16px;
+        }
+
+        .popup-section {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .popup-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .popup-section-title {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .popup-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+
+        .popup-label {
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .popup-value {
+            font-weight: 700;
+            color: #111;
+            font-size: 14px;
+        }
+
+        .change-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .change-badge.positive {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .change-badge.negative {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .change-badge.neutral {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .yield-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .search-box {
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px;
+            padding-left: 40px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <div id="map"></div>
+
+    <div class="mode-toggle">
+        <span class="mode-toggle-label">Dark Mode</span>
+        <label class="switch">
+            <input type="checkbox" id="modeToggle">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="view-selector">
+        <button class="view-btn active" data-view="sales">Sales PSF</button>
+        <button class="view-btn" data-view="rental">Rental PSF</button>
+        <button class="view-btn" data-view="yield">Price/Rent Ratio</button>
+        <button class="view-btn" data-view="change">Price Change</button>
+    </div>
+    
+    <div class="controls">
+        <h2>🗺️ Dubai Real Estate Map</h2>
+        
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search communities...">
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Communities</div>
+                <div class="stat-value" id="totalCount">0</div>
+            </div>
+            <div class="stat-box green">
+                <div class="stat-label" id="stat1Label">Avg Sales PSF</div>
+                <div class="stat-value" id="avgValue">0</div>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label>Price Range (AED/sqft)</label>
+            <select id="priceRange">
+                <option value="all">All Prices</option>
+                <option value="0-1000">Under 1,000</option>
+                <option value="1000-1500">1,000 - 1,500</option>
+                <option value="1500-2000">1,500 - 2,000</option>
+                <option value="2000-3000">2,000 - 3,000</option>
+                <option value="3000-5000">3,000 - 5,000</option>
+                <option value="5000-999999">Above 5,000</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>Time Period</label>
+            <select id="timePeriod">
+                <option value="Last_Month">Last Month</option>
+                <option value="Last_3_Months">Last 3 Months</option>
+                <option value="Last_6_Months">Last 6 Months</option>
+                <option value="Last_9_Months">Last 9 Months</option>
+                <option value="Last_12_Months">Last 12 Months</option>
+            </select>
+        </div>
+
+        <button class="toggle-btn" id="toggleHeatmap">Toggle Heatmap</button>
+    </div>
+
+    <div class="legend">
+        <h3 id="legendTitle">Sales Price per SqFt (AED)</h3>
+        <div class="legend-scale">
+            <div style="background: #3b82f6"></div>
+            <div style="background: #10b981"></div>
+            <div style="background: #fbbf24"></div>
+            <div style="background: #f97316"></div>
+            <div style="background: #ef4444"></div>
+        </div>
+        <div class="legend-labels" id="legendLabels">
+            <span>500</span>
+            <span>1,500</span>
+            <span>2,500</span>
+            <span>5,000</span>
+            <span>10,000+</span>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+    <script>
+        // ACCURATE COORDINATES
+        const communityCoordinates = {
+            "Al Barsha Apartments": [25.114000, 55.199000],
+            "Al Barsha Villas": [25.109000, 55.200000],
+            "Al Furjan Apartments": [25.033972, 55.145531],
+            "Al Furjan Villas": [25.026195, 55.142784],
+            "Al Habtoor City": [25.198500, 55.267500],
+            "Al Jaddaf Apartments": [25.224975, 55.331526],
+            "Al Khail Heights": [25.155696, 55.254450],
+            "Al Kifaf": [25.234758, 55.295906],
+            "Al Sufouh": [25.105000, 55.169000],
+            "Arabian Ranches": [25.049500, 55.262500],
+            "Arabian Ranches 2": [25.035061, 55.268097],
+            "Arabian Ranches 3": [25.065542, 55.324745],
+            "Arjan": [25.061188, 55.238228],
+            "Barsha Heights (Tecom)": [25.101500, 55.175000],
+            "Bluewaters Island": [25.078500, 55.119500],
+            "Business Bay": [25.187000, 55.263500],
+            "City Walk": [25.206106, 55.261445],
+            "DAMAC Hills 2 Apartments": [24.983257, 55.376759],
+            "DAMAC Hills 2 Villas": [24.992282, 55.377789],
+            "DAMAC Hills Apartments": [25.022929, 55.242519],
+            "DAMAC Hills Villas": [25.023084, 55.254536],
+            "DIFC": [25.213500, 55.281500],
+            "Discovery Gardens": [25.042500, 55.139500],
+            "Downtown Dubai": [25.197500, 55.274500],
+            "Dubai Creek Harbour": [25.206028, 55.344486],
+            "Dubai Festival City": [25.212707, 55.359421],
+            "Dubai Harbour": [25.093683, 55.141582],
+            "Dubai Healthcare City 2 Apartments": [25.231500, 55.326500],
+            "Dubai Hills Estate Apartments": [25.106500, 55.246500],
+            "Dubai Hills Estate Villas": [25.109500, 55.248500],
+            "Dubai Investments Park Apartments": [24.981500, 55.168500],
+            "Dubai Investments Park Villas": [24.976500, 55.172500],
+            "Dubai Islands Villas": [25.305545, 55.289555],
+            "Dubai Marina": [25.080500, 55.141000],
+            "Dubai Maritime City": [25.275124, 55.265522],
+            "Dubai Production City": [25.033350, 55.187073],
+            "Dubai Residence Complex": [25.096170, 55.380020],
+            "Dubai Science Park (DuBiotech) Apartments": [25.073005, 55.246296],
+            "Dubai Science Park (DuBiotech) Villas": [25.070517, 55.237026],
+            "Dubai Silicon Oasis Apartments": [25.121500, 55.386500],
+            "Dubai Silicon Oasis Villas": [25.124500, 55.390500],
+            "Dubai South Apartments": [24.945908, 55.221062],
+            "Dubai South Residential District Apartments": [24.948398, 55.228271],
+            "Dubai South Residential District Villas": [24.951200, 55.218315],
+            "Dubai South Townhouses": [24.946842, 55.214195],
+            "Dubai Sports City Apartments": [25.044548, 55.215054],
+            "Dubai Sports City Villas": [25.033506, 55.210247],
+            "Dubai Studio City": [25.043615, 55.249643],
+            "Dubai Water Canal Apartments": [25.188787, 55.246811],
+            "Emirates Hills Villas": [25.071295, 55.172653],
+            "Expo City": [24.963961, 55.151367],
+            "Falcon City of Wonders": [25.099590, 55.350838],
+            "International City": [25.169500, 55.416500],
+            "Jaddaf Waterfront Apartments": [25.226500, 55.339500],
+            "Jumeirah Bay Island Apartments": [25.220006, 55.234451],
+            "Jumeirah Beach Residence": [25.077203, 55.130939],
+            "Jumeirah Golf Estates Apartments": [25.027751, 55.204067],
+            "Jumeirah Golf Estates Villas": [25.013751, 55.200634],
+            "Jumeirah Heights Apartments": [25.067252, 55.148449],
+            "Jumeirah Islands": [25.055745, 55.158062],
+            "Jumeirah Lakes Towers": [25.069584, 55.141068],
+            "Jumeirah Park": [25.048281, 55.152397],
+            "Jumeirah Village Circle Apartments": [25.058500, 55.208500],
+            "Jumeirah Village Circle Villas": [25.061500, 55.211500],
+            "Jumeirah Village Triangle Apartments": [25.042682, 55.191193],
+            "Jumeirah Village Triangle Villas": [25.045170, 55.184669],
+            "Jumeirah Villas": [25.222646, 55.260887],
+            "Living Legends Apartments": [25.089486, 55.302258],
+            "Living Legends Villas": [25.086532, 55.300369],
+            "Liwan": [25.106741, 55.362167],
+            "Madinat Jumeirah Living Apartments": [25.136500, 55.192500],
+            "Majan Apartments": [25.090574, 55.309296],
+            "Meydan Apartments": [25.158026, 55.285521],
+            "Meydan Villas": [25.169291, 55.274878],
+            "Mirdif": [25.219500, 55.417500],
+            "Mohammed Bin Rashid City Apartments": [25.136427, 55.293846],
+            "Mohammed Bin Rashid City Townhouses": [25.141555, 55.300713],
+            "Motor City Apartments": [25.047892, 55.247326],
+            "Motor City Villas": [25.040738, 55.239429],
+            "Mudon": [25.017951, 55.270329],
+            "Nad Al Sheba Villas": [25.157560, 55.376072],
+            "Palm Jumeirah Apartments": [25.111093, 55.143127],
+            "Palm Jumeirah Fronds - Garden Homes": [25.113580, 55.125275],
+            "Reem Townhouses": [25.006128, 55.307579],
+            "Remraam": [25.002083, 55.252819],
+            "Rukan Apartments": [25.041282, 55.284576],
+            "Rukan Villas": [25.040582, 55.282774],
+            "Serena": [25.035294, 55.286808],
+            "Sobha Hartland Apartments": [25.177835, 55.309725],
+            "Sobha Hartland Villas": [25.175738, 55.306635],
+            "The Greens Apartments": [25.091662, 55.170422],
+            "The Hills": [25.078758, 55.159950],
+            "The Lakes Villas": [25.069500, 55.163500],
+            "The Meadows Villas": [25.059633, 55.166988],
+            "The Springs Villas": [25.059011, 55.184669],
+            "The Sustainable City Villas": [25.028334, 55.277109],
+            "The Valley": [25.011651, 55.446968],
+            "The Views Apartments": [25.092750, 55.167675],
+            "The Villa": [25.085288, 55.355644],
+            "Tilal Al Ghaf": [25.024640, 55.228443],
+            "Town Square Apartments": [25.012973, 55.288181],
+            "Town Square Townhouses": [25.014373, 55.283375],
+            "Villanova Villas": [25.074716, 55.359592],
+            "Wasl Gate Apartments": [25.029928, 55.110512],
+            "Wasl Gate Villas": [25.024951, 55.110168],
+            "Zabeel": [25.226295, 55.300241],
+            
+            // NEW COMMUNITIES - ACCURATE COORDINATES
+            "Emaar South Villas": [24.855055, 55.142827],
+            "Emaar South Apartments": [24.861129, 55.142398],
+            "Emaar South Townhouses": [24.866658, 55.136175],
+            "The Valley Phase 3 Villas": [25.011456, 55.435510],
+            "Sobha Sanctuary Townhouses": [24.981390, 55.407829],
+            "Sobha Sanctuary Villas": [24.978589, 55.402336],
+            "Sobha Reserve": [25.085443, 55.338306],
+            "Sobha Hartland 2 Apartments": [25.174728, 55.327749],
+            "Sobha Hartland 2 Villas": [25.175660, 55.329294],
+            "Sobha Elwood": [25.175000, 55.316000],
+            "Leos Knightsbridge Townhouses": [25.130521, 55.350924],
+            "Leos Knightsbridge Villas": [25.131687, 55.350580],
+            "Leos Royal Townhouses": [25.062782, 55.416455],
+            "Leos Royal Villas": [25.063676, 55.418129],
+        };
+
+        // RENTAL DATA FROM PDF (matching community names with sales data)
+        const rentalData = {
+            "Al Barsha": {rental: 77.63, monthOnMonth: 1.19, quarterOnQuarter: 4.27, yearOnYear: 5.06},
+            "Al Furjan": {rental: 87.32, monthOnMonth: 0.92, quarterOnQuarter: 1.33, yearOnYear: 7.08},
+            "Al Jaddaf Apartments": {rental: 78.42, monthOnMonth: 0.94, quarterOnQuarter: 3.12, yearOnYear: 8.34},
+            "Al Khail Heights": {rental: 71.41, monthOnMonth: 2.57, quarterOnQuarter: 3.67, yearOnYear: 12.74},
+            "Al Kifaf": {rental: 110.66, monthOnMonth: 0.67, quarterOnQuarter: 2.19, yearOnYear: 6.37},
+            "Al Sufouh": {rental: 77.7, monthOnMonth: 2.16, quarterOnQuarter: 3.64, yearOnYear: 6.61},
+            "Arabian Ranches": {rental: 87.4, monthOnMonth: 1.35, quarterOnQuarter: 1.57, yearOnYear: 9.44},
+            "Arabian Ranches 2": {rental: 88.59, monthOnMonth: 0.2, quarterOnQuarter: 0.62, yearOnYear: 4.28},
+            "Arabian Ranches 3": {rental: 81.38, monthOnMonth: 0.91, quarterOnQuarter: 1.75, yearOnYear: 6.7},
+            "Arjan": {rental: 83.99, monthOnMonth: 2.05, quarterOnQuarter: 5.94, yearOnYear: 10.3},
+            "Barsha Heights (Tecom)": {rental: 81.58, monthOnMonth: -0.79, quarterOnQuarter: 0.59, yearOnYear: 6.4},
+            "Bluewaters Island": {rental: 263.31, monthOnMonth: 0.87, quarterOnQuarter: 0.87, yearOnYear: -0.69},
+            "Business Bay": {rental: 117.15, monthOnMonth: 1.33, quarterOnQuarter: 3.88, yearOnYear: 7.37},
+            "City Walk": {rental: 141.41, monthOnMonth: 1.47, quarterOnQuarter: 4.52, yearOnYear: 11.11},
+            "DAMAC Hills": {rental: 99.29, monthOnMonth: 1.27, quarterOnQuarter: 2.47, yearOnYear: 5.82},
+            "DAMAC Hills 2": {rental: 50.9, monthOnMonth: 1.19, quarterOnQuarter: 1.56, yearOnYear: 6.42},
+            "Discovery Gardens": {rental: 68.83, monthOnMonth: 0.44, quarterOnQuarter: 1.22, yearOnYear: 8.86},
+            "Downtown Dubai": {rental: 139.66, monthOnMonth: 1.01, quarterOnQuarter: 2.23, yearOnYear: 4.8},
+            "Dubai Creek Harbour": {rental: 134.19, monthOnMonth: 1.42, quarterOnQuarter: 3.36, yearOnYear: 7.28},
+            "Dubai Festival City": {rental: 85.36, monthOnMonth: -6.68, quarterOnQuarter: -4.23, yearOnYear: 18.89},
+            "Dubai Harbour": {rental: 188.68, monthOnMonth: 0.61, quarterOnQuarter: 1.55, yearOnYear: -1.97},
+            "Dubai Healthcare City 2": {rental: 110.04, monthOnMonth: 1.91, quarterOnQuarter: 3.73, yearOnYear: 2.18},
+            "Dubai Hills Estate": {rental: 142.63, monthOnMonth: 1.88, quarterOnQuarter: 3.48, yearOnYear: 9.32},
+            "Dubai Investments Park": {rental: 66.47, monthOnMonth: 0.85, quarterOnQuarter: 0.83, yearOnYear: 7.49},
+            "Dubai Marina": {rental: 110.57, monthOnMonth: 0.74, quarterOnQuarter: 2.08, yearOnYear: 4.39},
+            "Dubai Maritime City": {rental: 105.93, monthOnMonth: -2.02, quarterOnQuarter: 0, yearOnYear: 9.23},
+            "Dubai Production City": {rental: 81.3, monthOnMonth: 0.81, quarterOnQuarter: 2.83, yearOnYear: 10.99},
+            "Dubai Residence Complex": {rental: 62.91, monthOnMonth: 1.04, quarterOnQuarter: 2.91, yearOnYear: 9.05},
+            "Dubai Science Park (Dubiotech)": {rental: 96.65, monthOnMonth: 0.52, quarterOnQuarter: 3.51, yearOnYear: 18.95},
+            "Dubai Silicon Oasis": {rental: 67.06, monthOnMonth: 1.3, quarterOnQuarter: 3.03, yearOnYear: 10.55},
+            "Dubai South": {rental: 72.77, monthOnMonth: 1.27, quarterOnQuarter: 3.43, yearOnYear: 11.13},
+            "Dubai Sports City": {rental: 77, monthOnMonth: 1.53, quarterOnQuarter: 3.93, yearOnYear: 9.98},
+            "Dubai Studio City": {rental: 107.83, monthOnMonth: 9.85, quarterOnQuarter: 14.49, yearOnYear: 11.56},
+            "Dubai Water Canal": {rental: 146.22, monthOnMonth: 0.84, quarterOnQuarter: 4.09, yearOnYear: -2.17},
+            "Expo City": {rental: 89.65, monthOnMonth: -1.32, quarterOnQuarter: -1.28, yearOnYear: 7.02},
+            "Falcon City Of Wonders": {rental: 49.89, monthOnMonth: 0.18, quarterOnQuarter: 2.82, yearOnYear: 3.01},
+            "International City": {rental: 57.32, monthOnMonth: 0.79, quarterOnQuarter: 2.38, yearOnYear: 7.78},
+            "Jaddaf Waterfront": {rental: 76.78, monthOnMonth: 1.64, quarterOnQuarter: 4.96, yearOnYear: 2.07},
+            "Jumeirah Bay Island": {rental: 454.59, monthOnMonth: -5.51, quarterOnQuarter: -3.82, yearOnYear: 1.84},
+            "Jumeirah Beach Residence": {rental: 96.09, monthOnMonth: -0.67, quarterOnQuarter: -0.88, yearOnYear: 3.19},
+            "Jumeirah Golf Estates": {rental: 107.23, monthOnMonth: 1.5, quarterOnQuarter: 1.76, yearOnYear: 7.31},
+            "Jumeirah Heights": {rental: 89.41, monthOnMonth: 0.13, quarterOnQuarter: -0.36, yearOnYear: 5.25},
+            "Jumeirah Islands": {rental: 103.57, monthOnMonth: 4.24, quarterOnQuarter: 4.37, yearOnYear: 10.32},
+            "Jumeirah Lakes Towers": {rental: 103.25, monthOnMonth: 0.33, quarterOnQuarter: 1.9, yearOnYear: 6.45},
+            "Jumeirah Park": {rental: 79.95, monthOnMonth: 0, quarterOnQuarter: 1.32, yearOnYear: 2.16},
+            "Jumeirah Village Circle": {rental: 94.22, monthOnMonth: 0.89, quarterOnQuarter: 2.7, yearOnYear: 17.12},
+            "Jumeirah Village Triangle": {rental: 94.85, monthOnMonth: 3.21, quarterOnQuarter: 11.92, yearOnYear: 13.4},
+            "Living Legends": {rental: 72.14, monthOnMonth: 2.28, quarterOnQuarter: 5.01, yearOnYear: 13.57},
+            "Liwan": {rental: 65.73, monthOnMonth: 1.2, quarterOnQuarter: 2.08, yearOnYear: 11.27},
+            "Madinat Jumeirah Living": {rental: 161.51, monthOnMonth: 1.08, quarterOnQuarter: 2.04, yearOnYear: 4.19},
+            "Majan": {rental: 70.01, monthOnMonth: 1.6, quarterOnQuarter: 5.61, yearOnYear: 17.19},
+            "Meydan": {rental: 91.46, monthOnMonth: 0.24, quarterOnQuarter: 1.43, yearOnYear: 8.06},
+            "Mirdif": {rental: 53.04, monthOnMonth: 0.97, quarterOnQuarter: 5.01, yearOnYear: 6.08},
+            "Mohammed Bin Rashid City": {rental: 137.93, monthOnMonth: 1.3, quarterOnQuarter: 2.5, yearOnYear: 6.24},
+            "Motor City": {rental: 71.53, monthOnMonth: 1.19, quarterOnQuarter: 3.17, yearOnYear: 12.54},
+            "Mudon": {rental: 87.31, monthOnMonth: 0, quarterOnQuarter: -0.38, yearOnYear: 5.41},
+            "Nad Al Sheba": {rental: 96.94, monthOnMonth: 0, quarterOnQuarter: -0.75, yearOnYear: 5.5},
+            "Palm Jumeirah": {rental: 133.47, monthOnMonth: 2.05, quarterOnQuarter: 4.84, yearOnYear: 8.84},
+            "Reem": {rental: 67.39, monthOnMonth: 0.21, quarterOnQuarter: 1.25, yearOnYear: 4.48},
+            "Remraam": {rental: 69.65, monthOnMonth: 1.02, quarterOnQuarter: 4.27, yearOnYear: 8.68},
+            "Rukan": {rental: 90.31, monthOnMonth: -0.17, quarterOnQuarter: -1.19, yearOnYear: 2.59},
+            "Serena": {rental: 75.87, monthOnMonth: 1.19, quarterOnQuarter: 0.48, yearOnYear: 8.05},
+            "Sobha Hartland": {rental: 136.31, monthOnMonth: 1.2, quarterOnQuarter: 2.62, yearOnYear: 3.93},
+            "The Greens": {rental: 105.93, monthOnMonth: 1.32, quarterOnQuarter: 2.72, yearOnYear: 7.79},
+            "The Hills": {rental: 128.47, monthOnMonth: -0.02, quarterOnQuarter: 1.47, yearOnYear: 2.99},
+            "The Lakes": {rental: 100.93, monthOnMonth: 0.6, quarterOnQuarter: -0.29, yearOnYear: 7.65},
+            "The Meadows": {rental: 102.26, monthOnMonth: 0.19, quarterOnQuarter: 0.2, yearOnYear: 13.23},
+            "The Springs": {rental: 93.62, monthOnMonth: 0.66, quarterOnQuarter: 2.1, yearOnYear: 9.38},
+            "The Sustainable City": {rental: 82.12, monthOnMonth: 0.37, quarterOnQuarter: 3.91, yearOnYear: 7.23},
+            "The Valley": {rental: 71.44, monthOnMonth: 0.08, quarterOnQuarter: 3.27, yearOnYear: 1.77},
+            "The Views": {rental: 119.84, monthOnMonth: 1.43, quarterOnQuarter: 2.17, yearOnYear: 4.79},
+            "The Villa": {rental: 66.94, monthOnMonth: 0.86, quarterOnQuarter: 0.16, yearOnYear: 3.3},
+            "Tilal Al Ghaf": {rental: 102.64, monthOnMonth: 1.15, quarterOnQuarter: 2.94, yearOnYear: 10.99},
+            "Town Square": {rental: 80.19, monthOnMonth: 1.03, quarterOnQuarter: 2.64, yearOnYear: 11.28},
+            "Villanova": {rental: 80.65, monthOnMonth: -0.14, quarterOnQuarter: 0.07, yearOnYear: 6.69},
+            "Wasl Gate": {rental: 102.43, monthOnMonth: 0.31, quarterOnQuarter: 2.56, yearOnYear: 3.32},
+            "Zabeel": {rental: 150.88, monthOnMonth: 0.59, quarterOnQuarter: -0.33, yearOnYear: 4.41},
+            
+            // NEW COMMUNITIES WITH RENTAL DATA
+            "Emaar South": {rental: 80, monthOnMonth: 1.5, quarterOnQuarter: 3, yearOnYear: 12},
+            "Sobha Hartland 2": {rental: 0, monthOnMonth: 0, quarterOnQuarter: 0, yearOnYear: 9.8},
+        };
+
+        // SALES DATA
+        const rawCSV = `Location,Average_Sales_AED_sq_ft,Last_Month,Last_3_Months,Last_6_Months,Last_9_Months,Last_12_Months
+Al Barsha Apartments,1266.8,0.24%,-2.65%,2.05%,5.74%,1.72%
+Al Barsha Villas,2934,0%,0%,0%,-32.58%,58.99%
+Al Furjan Apartments,1283,-0.41%,1.25%,1.46%,6.87%,21.32%
+Al Furjan Villas,1696.5,2.08%,0.5%,-3.43%,2.85%,18.31%
+Al Habtoor City,1878.67,0.55%,4.27%,2.2%,2.65%,7.33%
+Al Jaddaf Apartments,2277.75,8.49%,4.71%,33.82%,30.43%,23.26%
+Al Khail Heights,836.92,2.94%,5.88%,3.91%,3.59%,6.85%
+Al Kifaf,2018.5,-2.08%,-2.01%,-0.92%,-1.8%,1.08%
+Al Sufouh,1651.33,1.03%,4.14%,7.37%,13.11%,11.95%
+Arabian Ranches,2145.83,-1.19%,1.06%,4.2%,10.54%,12.59%
+Arabian Ranches 2,1825.67,0.87%,-0.24%,0.52%,5.14%,11.32%
+Arabian Ranches 3,1652.33,1.1%,6.19%,10.35%,10.28%,12.44%
+Arjan,1328,0.98%,3.17%,7.97%,12.53%,14.3%
+Barsha Heights (Tecom),1087,-1.58%,2.24%,-7.21%,-8.57%,-9.44%
+Bluewaters Island,5794.5,2.71%,8%,5.99%,6.17%,28.15%
+Business Bay,1868.42,0.3%,3.13%,5.25%,4.87%,5.46%
+City Walk,2766.58,-0.81%,1.2%,1.39%,7.22%,18.19%
+DAMAC Hills 2 Apartments,1091.33,0.61%,3.82%,4.91%,7.34%,16.96%
+DAMAC Hills 2 Villas,871.75,0.6%,1.48%,2.2%,3.06%,6.15%
+DAMAC Hills Apartments,1354.17,0.46%,4.36%,8.76%,7.91%,5.36%
+DAMAC Hills Villas,1641.25,-0.49%,-2.19%,-3.54%,0.64%,2.23%
+DIFC,2296.33,2.16%,9%,14.36%,15.07%,20%
+Discovery Gardens,937.17,4.27%,8.25%,11%,15.43%,21.71%
+Downtown Dubai,2609.33,2.2%,3.79%,5.43%,4.25%,7.51%
+Dubai Creek Harbour,2351.58,0.64%,2.51%,4.53%,5.3%,6.49%
+Dubai Festival City,1579.42,0.66%,1.93%,1.36%,1.18%,6.96%
+Dubai Harbour,3564.75,-0.09%,-0.19%,0.77%,-0.42%,-1.34%
+Dubai Healthcare City 2 Apartments,1691.33,4.6%,12.6%,14.03%,12.54%,15.13%
+Dubai Hills Estate Apartments,2392.25,1.25%,3.8%,7.01%,7.95%,7.48%
+Dubai Hills Estate Villas,2713.5,0.14%,-1.33%,1.83%,12.05%,16.63%
+Dubai Investments Park Apartments,778.75,0.51%,6.95%,9.61%,11.45%,18.89%
+Dubai Investments Park Villas,1548.83,3.37%,13.46%,19.99%,30.77%,30.46%
+Dubai Islands Villas,1741.5,-0.18%,-0.01%,0.21%,-10.47%,-9.47%
+Dubai Marina,1865.67,-0.03%,2.86%,6.06%,10.79%,15.21%
+Dubai Maritime City,1933.17,-4.24%,-8.95%,-11.76%,-8.6%,-9.5%
+Dubai Production City,971.75,-1.84%,-1.74%,5.87%,9.36%,8.73%
+Dubai Residence Complex,813.83,-0.24%,-1.41%,-2.07%,4.23%,9.1%
+Dubai Science Park (DuBiotech) Apartments,1437.58,-2.05%,0.49%,3.8%,1.82%,-6.97%
+Dubai Science Park (DuBiotech) Villas,1837.88,2.2%,-0.06%,6.99%,6.5%,17.39%
+Dubai Silicon Oasis Apartments,931.25,-0.06%,2.59%,6.68%,11.96%,16.25%
+Dubai Silicon Oasis Villas,1338.58,2.95%,4.3%,11.87%,16.66%,16.4%
+Dubai South Apartments,1030.83,0.53%,1.32%,1.81%,6.86%,12.37%
+Dubai South Residential District Apartments,1031.08,0.44%,1.92%,2.42%,6.77%,12.86%
+Dubai South Residential District Villas,1277,-1%,-0.71%,0.76%,9.95%,9.47%
+Dubai South Townhouses,1180.25,-3.2%,-9.14%,-1.71%,3.98%,6.17%
+Dubai Sports City Apartments,909.67,1.25%,1.23%,3.51%,8.77%,12.51%
+Dubai Sports City Villas,1940.92,-1.22%,8.99%,7.87%,11.31%,38.46%
+Dubai Studio City,1018.83,0.51%,2.61%,3.75%,3.91%,10.25%
+Dubai Water Canal Apartments,3003.75,-0.25%,1.26%,3.36%,3.8%,12.83%
+Emirates Hills Villas,9245,20.32%,650.71%,204.51%,129.49%,8.87%
+Expo City,2230,0%,12.68%,12.68%,-21.77%,-21.77%
+Falcon City of Wonders,1227.67,3.36%,2.04%,1.82%,7.08%,7.67%
+International City,654.25,0.85%,1.24%,2.29%,4.55%,8.91%
+Jaddaf Waterfront Apartments,1478.17,-0.51%,-0.31%,4.04%,-0.38%,5.99%
+Jumeirah Bay Island Apartments,10855.63,0%,-4.46%,9.69%,35.02%,14.04%
+Jumeirah Beach Residence,1738.17,0.99%,1.52%,2.78%,7.5%,6.57%
+Jumeirah Golf Estates Apartments,1442.75,1.04%,3%,2.11%,6.52%,10.25%
+Jumeirah Golf Estates Villas,2197.5,2.26%,2.4%,1.69%,4.54%,12.96%
+Jumeirah Heights Apartments,1554,-0.36%,-4.55%,-1.48%,6.81%,12.09%
+Jumeirah Islands,4325.17,0.93%,2.53%,8.02%,9.41%,18.51%
+Jumeirah Lakes Towers,1455.33,0.88%,1.65%,4.63%,6.15%,9.12%
+Jumeirah Park,2129.5,1.4%,3.97%,6.87%,10.98%,14.99%
+Jumeirah Village Circle Apartments,1339.17,2.07%,4.53%,6.61%,8.22%,14.1%
+Jumeirah Village Circle Villas,1072.25,2.06%,4.63%,8.45%,17.79%,21.48%
+Jumeirah Village Triangle Apartments,1307.33,1.69%,7.12%,10.58%,21.1%,26.22%
+Jumeirah Village Triangle Villas,1726,1.07%,5.08%,5.79%,4.75%,5.04%
+Jumeirah Villas,1780.5,0%,28.46%,27.66%,-40.4%,-40.4%
+Living Legends Apartments,996.08,3.6%,10.3%,23.02%,30.07%,33.97%
+Living Legends Villas,1445.17,2.31%,-4.91%,-5.74%,-0.28%,4.7%
+Liwan,773.17,-0.07%,0.72%,1.14%,5.95%,12.86%
+Madinat Jumeirah Living Apartments,2866.33,-1.08%,0.72%,-2.8%,0.17%,11.3%
+Majan Apartments,883.33,5.48%,-3.27%,-13.05%,-10.38%,-5.43%
+Meydan Apartments,1582.67,1.52%,2.99%,16.64%,21.47%,13.43%
+Meydan Villas,1721.83,-2.35%,10.76%,6.81%,0.8%,9.67%
+Mirdif,1011.75,-2.73%,2.23%,2.16%,-2.76%,-4.62%
+Mohammed Bin Rashid City Apartments,2023.75,0.14%,1.95%,3.54%,7.98%,14.91%
+Mohammed Bin Rashid City Townhouses,1957.75,3.85%,6.53%,17.11%,19.48%,9.5%
+Motor City Apartments,1011.67,0.45%,0.78%,6.04%,16.93%,35.16%
+Motor City Villas,1610.63,1.88%,8.96%,9.82%,13.19%,20.29%
+Mudon,1537.17,2.74%,0.34%,5.17%,10.46%,9.43%
+Nad Al Sheba Villas,2689,2.26%,8.74%,12.64%,18.31%,19.24%
+Palm Jumeirah Apartments,2683.08,1.18%,6.2%,6.46%,6.76%,13.93%
+Palm Jumeirah Fronds - Garden Homes,7625.92,6.48%,12.88%,28.19%,18.79%,19.01%
+Reem Townhouses,1372.5,0.68%,3.48%,8.9%,11.42%,13.7%
+Remraam,929.08,1.53%,3.58%,5.84%,7.29%,9.36%
+Rukan Apartments,1111.33,-1.15%,0.16%,3.09%,8.79%,19.63%
+Rukan Villas,1329.83,2%,-0.07%,1.24%,9.7%,12.27%
+Serena,1453,1.5%,1.86%,0.77%,0.89%,4.92%
+Sobha Hartland Apartments,2150.25,0.4%,1.86%,4.21%,4.83%,6.93%
+Sobha Hartland Villas,2352,9.03%,-1.01%,-1.54%,6.42%,8.96%
+The Greens Apartments,1706,2.41%,3.95%,7.31%,11.67%,15.5%
+The Hills,2474.58,1.59%,-1.38%,-2.14%,1.54%,10.61%
+The Lakes Villas,2942.08,-3.32%,4.15%,17.9%,33.73%,34.44%
+The Meadows Villas,3236.67,4.01%,8.02%,14.39%,17.7%,31.48%
+The Springs Villas,2148.5,1.62%,2.29%,4.33%,8.56%,14.08%
+The Sustainable City Villas,1249.33,-0.01%,-7%,-2.21%,-2.17%,-1.18%
+The Valley,1437.58,1.8%,3.81%,6.28%,10.55%,15.06%
+The Views Apartments,1977.67,0.85%,-0.37%,0.44%,4.74%,7.98%
+The Villa,1660.17,0.43%,4.86%,9%,12.22%,19.02%
+Tilal Al Ghaf,1981.67,-0.43%,0.9%,-0.92%,0.34%,3.9%
+Town Square Apartments,1348.42,0.53%,2.29%,6.57%,13.65%,22.09%
+Town Square Townhouses,1346.17,1.33%,3.99%,8.39%,10.89%,16.93%
+Villanova Villas,1535.67,-0.08%,1.16%,2.01%,6.58%,10.9%
+Wasl Gate Apartments,1357.92,1.14%,0.11%,0.73%,3.02%,3.95%
+Wasl Gate Villas,1557.38,-0.89%,-1.2%,-3.03%,-1.59%,0.72%
+Zabeel,1479.17,0.33%,5.22%,0.14%,-5.32%,1.63%
+Emaar South Villas,1550,0%,2%,-3%,7%,13.5%
+Emaar South Apartments,1708,0%,3%,4.5%,6%,14%
+Emaar South Townhouses,1328,0%,1%,-3%,5%,11%
+The Valley Phase 3 Villas,1552,0%,0%,0%,0%,0%
+Sobha Sanctuary Townhouses,1680,0%,0%,0%,0%,0%
+Sobha Sanctuary Villas,1980,0%,0%,0%,0%,0%
+Sobha Reserve,1543,0%,0%,0%,0%,0%
+Sobha Hartland 2 Apartments,1800,0%,0%,0%,9.8%,9.8%
+Sobha Hartland 2 Villas,3700,0%,0%,0%,10%,10%
+Sobha Elwood,1800,0%,0%,0%,0%,0%
+Leos Knightsbridge Townhouses,2003,0%,0%,0%,0%,0%
+Leos Knightsbridge Villas,2131,0%,0%,0%,0%,0%
+Leos Royal Townhouses,1560,0%,0%,0%,0%,0%
+Leos Royal Villas,1624,0%,0%,0%,0%,0%`;
+
+        function parseCSV(csv) {
+            const lines = csv.trim().split('\n');
+            const headers = lines[0].split(',');
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                const location = values[0];
+                const coords = communityCoordinates[location];
+                
+                if (!coords) {
+                    console.warn(`No coordinates for: ${location}`);
+                    continue;
+                }
+                
+                // Match rental data (try exact match, then partial match)
+                let rentalMatch = null;
+                const rentalKey = Object.keys(rentalData).find(key => 
+                    location.includes(key) || key.includes(location.replace(' Apartments', '').replace(' Villas', '').replace(' Townhouses', ''))
+                );
+                if (rentalKey) {
+                    rentalMatch = rentalData[rentalKey];
+                }
+                
+                const obj = {
+                    name: location,
+                    lat: coords[0],
+                    lng: coords[1],
+                    psf: parseFloat(values[1]),
+                    rental: rentalMatch ? rentalMatch.rental : null,
+                    rentalYield: rentalMatch ? (parseFloat(values[1]) / rentalMatch.rental).toFixed(2) : null,
+                    changes: {},
+                    rentalChanges: rentalMatch ? {
+                        monthOnMonth: rentalMatch.monthOnMonth,
+                        quarterOnQuarter: rentalMatch.quarterOnQuarter,
+                        yearOnYear: rentalMatch.yearOnYear
+                    } : null
+                };
+                
+                for (let j = 2; j < headers.length; j++) {
+                    const key = headers[j];
+                    const value = parseFloat(values[j].replace('%', ''));
+                    obj.changes[key] = value;
+                }
+                
+                data.push(obj);
+            }
+            
+            return data;
+        }
+
+        let dubaiCommunities = parseCSV(rawCSV);
+        console.log(`✓ Loaded ${dubaiCommunities.length} communities with sales & rental data`);
+
+        let currentView = 'sales';
+        let currentTimePeriod = 'Last_Month';
+        let darkMode = false;
+
+        const map = L.map('map').setView([25.2048, 55.2708], 11);
+
+        let darkTiles, lightTiles;
+
+        lightTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap, © CartoDB',
+            maxZoom: 19
+        }).addTo(map);
+
+        darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap, © CartoDB',
+            maxZoom: 19
+        });
+
+        document.getElementById('modeToggle').addEventListener('change', function() {
+            darkMode = this.checked;
+            if (darkMode) {
+                document.body.classList.remove('light-mode');
+                document.body.classList.add('dark-mode');
+                map.removeLayer(lightTiles);
+                map.addLayer(darkTiles);
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+                map.removeLayer(darkTiles);
+                map.addLayer(lightTiles);
+            }
+            filterCommunities();
+        });
+
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentView = this.dataset.view;
+                updateLegend();
+                filterCommunities();
+            });
+        });
+
+        document.getElementById('timePeriod').addEventListener('change', function() {
+            currentTimePeriod = this.value;
+            filterCommunities();
+        });
+
+        function updateLegend() {
+            const legendTitle = document.getElementById('legendTitle');
+            const legendLabels = document.getElementById('legendLabels');
+            const stat1Label = document.getElementById('stat1Label');
+            
+            if (currentView === 'sales') {
+                legendTitle.textContent = 'Sales Price per SqFt (AED)';
+                stat1Label.textContent = 'Avg Sales PSF';
+                legendLabels.innerHTML = `
+                    <span>500</span>
+                    <span>1,500</span>
+                    <span>2,500</span>
+                    <span>5,000</span>
+                    <span>10,000+</span>
+                `;
+            } else if (currentView === 'rental') {
+                legendTitle.textContent = 'Rental Price per SqFt (AED)';
+                stat1Label.textContent = 'Avg Rental PSF';
+                legendLabels.innerHTML = `
+                    <span>50</span>
+                    <span>80</span>
+                    <span>120</span>
+                    <span>180</span>
+                    <span>250+</span>
+                `;
+            } else if (currentView === 'yield') {
+                legendTitle.textContent = 'Price-to-Rent Ratio';
+                stat1Label.textContent = 'Avg Ratio';
+                legendLabels.innerHTML = `
+                    <span>10</span>
+                    <span>15</span>
+                    <span>20</span>
+                    <span>25</span>
+                    <span>30+</span>
+                `;
+            } else {
+                legendTitle.textContent = 'Price Change (%)';
+                stat1Label.textContent = 'Avg Change';
+                legendLabels.innerHTML = `
+                    <span>-5%</span>
+                    <span>-2%</span>
+                    <span>0%</span>
+                    <span>+5%</span>
+                    <span>+10%</span>
+                `;
+            }
+        }
+
+        function getColorSales(psf) {
+            return psf > 5000 ? '#ef4444' :
+                   psf > 2500 ? '#f97316' :
+                   psf > 1500 ? '#fbbf24' :
+                   psf > 1000 ? '#10b981' :
+                              '#3b82f6';
+        }
+
+        function getColorRental(rental) {
+            return rental > 180 ? '#ef4444' :
+                   rental > 120 ? '#f97316' :
+                   rental > 80 ? '#fbbf24' :
+                   rental > 50 ? '#10b981' :
+                              '#3b82f6';
+        }
+
+        function getColorYield(ratio) {
+            return ratio > 25 ? '#ef4444' :
+                   ratio > 20 ? '#f97316' :
+                   ratio > 15 ? '#fbbf24' :
+                   ratio > 10 ? '#10b981' :
+                              '#3b82f6';
+        }
+
+        function getColorChange(change) {
+            if (Math.abs(change) < 0.5) return '#3b82f6';
+            return change > 0 ? '#10b981' : '#ef4444';
+        }
+
+        function getChangeClass(change) {
+            if (Math.abs(change) < 0.5) return 'neutral';
+            return change > 0 ? 'positive' : 'negative';
+        }
+
+        let allMarkers = [];
+        let heatmapLayer = null;
+        let heatmapVisible = true;
+
+        function createHeatmap(data) {
+            const heatData = data.map(prop => {
+                if (currentView === 'sales') {
+                    return [prop.lat, prop.lng, prop.psf / 1000];
+                } else if (currentView === 'rental' && prop.rental) {
+                    return [prop.lat, prop.lng, prop.rental / 10];
+                } else if (currentView === 'yield' && prop.rentalYield) {
+                    return [prop.lat, prop.lng, parseFloat(prop.rentalYield)];
+                } else {
+                    const change = prop.changes[currentTimePeriod];
+                    return [prop.lat, prop.lng, Math.abs(change)];
+                }
+            }).filter(d => d[2] > 0);
+            
+            if (heatmapLayer) {
+                map.removeLayer(heatmapLayer);
+            }
+            
+            heatmapLayer = L.heatLayer(heatData, {
+                radius: 30,
+                blur: 20,
+                maxZoom: 13,
+                max: currentView === 'sales' ? 10.0 : currentView === 'rental' ? 25.0 : currentView === 'yield' ? 30.0 : 20.0,
+                gradient: {
+                    0.0: '#3b82f6',
+                    0.3: '#10b981',
+                    0.5: '#fbbf24',
+                    0.7: '#f97316',
+                    1.0: '#ef4444'
+                }
+            }).addTo(map);
+        }
+
+        function createMarkers(data) {
+            allMarkers.forEach(marker => map.removeLayer(marker));
+            allMarkers = [];
+            
+            data.forEach(community => {
+                let color, label;
+                
+                if (currentView === 'sales') {
+                    color = getColorSales(community.psf);
+                    label = `${Math.round(community.psf).toLocaleString()}`;
+                } else if (currentView === 'rental') {
+                    if (!community.rental) return;
+                    color = getColorRental(community.rental);
+                    label = `${Math.round(community.rental)}`;
+                } else if (currentView === 'yield') {
+                    if (!community.rentalYield) return;
+                    color = getColorYield(parseFloat(community.rentalYield));
+                    label = `${community.rentalYield}x`;
+                } else {
+                    const change = community.changes[currentTimePeriod];
+                    color = getColorChange(change);
+                    label = `${change > 0 ? '+' : ''}${change.toFixed(2)}%`;
+                }
+                
+                const icon = L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `
+                        <div class="price-marker">
+                            <div class="price-dot" style="background-color: ${color}"></div>
+                            <div class="price-label">${label}</div>
+                        </div>
+                    `,
+                    iconSize: [60, 60],
+                    iconAnchor: [30, 30]
+                });
+
+                const marker = L.marker([community.lat, community.lng], { icon: icon });
+
+                // Build popup content
+                let popupContent = `
+                    <div class="popup-header">
+                        <div class="popup-title">${community.name}</div>
+                        <div class="popup-subtitle">Dubai Real Estate</div>
+                    </div>
+                    <div class="popup-body">`;
+                
+                // Sales Section
+                popupContent += `
+                    <div class="popup-section">
+                        <div class="popup-section-title">💰 Sales Data</div>
+                        <div class="popup-row">
+                            <span class="popup-label">Price per SqFt</span>
+                            <span class="popup-value">AED ${Math.round(community.psf).toLocaleString()}</span>
+                        </div>
+                        <div class="popup-row">
+                            <span class="popup-label">Last Month</span>
+                            <span class="change-badge ${getChangeClass(community.changes.Last_Month)}">
+                                ${community.changes.Last_Month > 0 ? '+' : ''}${community.changes.Last_Month.toFixed(2)}%
+                            </span>
+                        </div>
+                        <div class="popup-row">
+                            <span class="popup-label">Last 12 Months</span>
+                            <span class="change-badge ${getChangeClass(community.changes.Last_12_Months)}">
+                                ${community.changes.Last_12_Months > 0 ? '+' : ''}${community.changes.Last_12_Months.toFixed(2)}%
+                            </span>
+                        </div>
+                    </div>`;
+                
+                // Rental Section (if available)
+                if (community.rental && community.rentalChanges) {
+                    popupContent += `
+                        <div class="popup-section">
+                            <div class="popup-section-title">🏠 Rental Data</div>
+                            <div class="popup-row">
+                                <span class="popup-label">Rental PSF</span>
+                                <span class="popup-value">AED ${Math.round(community.rental)}</span>
+                            </div>
+                            <div class="popup-row">
+                                <span class="popup-label">Month-on-Month</span>
+                                <span class="change-badge ${getChangeClass(community.rentalChanges.monthOnMonth)}">
+                                    ${community.rentalChanges.monthOnMonth > 0 ? '+' : ''}${community.rentalChanges.monthOnMonth.toFixed(2)}%
+                                </span>
+                            </div>
+                            <div class="popup-row">
+                                <span class="popup-label">Year-on-Year</span>
+                                <span class="change-badge ${getChangeClass(community.rentalChanges.yearOnYear)}">
+                                    ${community.rentalChanges.yearOnYear > 0 ? '+' : ''}${community.rentalChanges.yearOnYear.toFixed(2)}%
+                                </span>
+                            </div>
+                        </div>`;
+                }
+                
+                // Yield Section (if available)
+                if (community.rentalYield) {
+                    popupContent += `
+                        <div class="popup-section">
+                            <div class="popup-section-title">📊 Investment</div>
+                            <div class="yield-badge">Price-to-Rent Ratio: ${community.rentalYield}x</div>
+                        </div>`;
+                }
+                
+                popupContent += `</div>`;
+
+                marker.bindPopup(popupContent);
+                marker.addTo(map);
+                allMarkers.push(marker);
+            });
+            
+            updateStats(data);
+        }
+
+        function updateStats(data) {
+            document.getElementById('totalCount').textContent = data.length;
+            
+            if (currentView === 'sales') {
+                const avgPSF = Math.round(data.reduce((sum, c) => sum + c.psf, 0) / data.length);
+                document.getElementById('avgValue').textContent = avgPSF.toLocaleString();
+            } else if (currentView === 'rental') {
+                const dataWithRental = data.filter(c => c.rental);
+                const avgRental = dataWithRental.length > 0 ? 
+                    Math.round(dataWithRental.reduce((sum, c) => sum + c.rental, 0) / dataWithRental.length) : 0;
+                document.getElementById('avgValue').textContent = avgRental.toLocaleString();
+            } else if (currentView === 'yield') {
+                const dataWithYield = data.filter(c => c.rentalYield);
+                const avgYield = dataWithYield.length > 0 ? 
+                    (dataWithYield.reduce((sum, c) => sum + parseFloat(c.rentalYield), 0) / dataWithYield.length).toFixed(2) : 0;
+                document.getElementById('avgValue').textContent = avgYield + 'x';
+            } else {
+                const avgChange = (data.reduce((sum, c) => sum + c.changes[currentTimePeriod], 0) / data.length).toFixed(2);
+                document.getElementById('avgValue').textContent = avgChange + '%';
+            }
+        }
+
+        function filterCommunities() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const priceRange = document.getElementById('priceRange').value;
+
+            const filtered = dubaiCommunities.filter(community => {
+                const matchesSearch = community.name.toLowerCase().includes(searchTerm);
+                
+                let matchesPrice = true;
+                if (priceRange !== 'all') {
+                    const [min, max] = priceRange.split('-').map(Number);
+                    matchesPrice = community.psf >= min && community.psf <= max;
+                }
+                
+                return matchesSearch && matchesPrice;
+            });
+
+            createHeatmap(filtered);
+            createMarkers(filtered);
+        }
+
+        createHeatmap(dubaiCommunities);
+        createMarkers(dubaiCommunities);
+
+        document.getElementById('searchInput').addEventListener('input', filterCommunities);
+        document.getElementById('priceRange').addEventListener('change', filterCommunities);
+
+        document.getElementById('toggleHeatmap').addEventListener('click', () => {
+            if (heatmapVisible) {
+                map.removeLayer(heatmapLayer);
+                heatmapVisible = false;
+            } else {
+                map.addLayer(heatmapLayer);
+                heatmapVisible = true;
+            }
+        });
+    </script>
+</body>
+</html>
