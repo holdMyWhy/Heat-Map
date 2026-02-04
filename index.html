@@ -169,6 +169,208 @@
             z-index: 1000;
             max-width: 320px;
             border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .controls.minimized {
+            padding: 0;
+            max-width: 60px;
+            overflow: hidden;
+        }
+
+        .controls.minimized .control-content {
+            display: none;
+        }
+
+        .minimize-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .minimize-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .minimize-btn:active {
+            transform: translateY(0);
+        }
+
+        .minimize-btn .icon {
+            font-size: 16px;
+        }
+
+        .controls.minimized .minimize-btn {
+            position: static;
+            margin: 12px;
+            width: auto;
+        }
+
+        .dark-mode .minimize-btn {
+            background: #1f2937;
+            border-color: #667eea;
+        }
+
+        .dark-mode .minimize-btn:hover {
+            background: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                top: auto;
+                bottom: 20px;
+                left: 10px;
+                right: 10px;
+                max-width: none;
+                max-height: 60vh;
+                overflow-y: auto;
+                padding: 16px;
+                padding-top: 50px;
+                transform: translateY(0);
+            }
+
+            .controls.minimized {
+                max-width: 80px;
+                left: 10px;
+                right: auto;
+                bottom: 20px;
+                transform: translateY(0);
+                padding: 0;
+            }
+
+            .minimize-btn {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+
+            .controls.minimized .minimize-btn {
+                position: static;
+                margin: 10px;
+                font-size: 12px;
+            }
+
+            .controls.collapsed {
+                transform: translateY(calc(100% + 20px));
+            }
+
+            .mobile-toggle {
+                display: none !important;
+            }
+
+            .controls h2 {
+                font-size: 18px;
+                margin-bottom: 12px;
+            }
+
+            .stats-grid {
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+
+            .stat-box {
+                padding: 8px;
+            }
+
+            .stat-label {
+                font-size: 10px;
+            }
+
+            .stat-value {
+                font-size: 16px;
+            }
+
+            .filter-group {
+                margin-bottom: 12px;
+            }
+
+            .filter-group label {
+                font-size: 11px;
+                margin-bottom: 6px;
+            }
+
+            .filter-group select,
+            .filter-group input {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+
+            .toggle-btn {
+                padding: 12px 16px;
+                font-size: 13px;
+                margin-top: 8px;
+            }
+
+            .view-selector {
+                top: 20px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                flex-wrap: wrap;
+            }
+
+            .view-btn {
+                flex: 1 1 45%;
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .mode-toggle {
+                top: 90px;
+                right: 10px;
+                padding: 10px 14px;
+            }
+
+            .mode-toggle-label {
+                font-size: 12px;
+            }
+
+            .legend {
+                bottom: 90px;
+                top: auto;
+                right: 10px;
+                left: auto;
+                max-width: 200px;
+                padding: 10px 12px;
+            }
+
+            .legend h3 {
+                font-size: 10px;
+                margin-bottom: 6px;
+            }
+
+            .legend-scale {
+                height: 14px;
+                margin-bottom: 4px;
+            }
+
+            .legend-labels {
+                font-size: 8px;
+            }
+            }
+        }
+
+        .mobile-toggle {
+            display: none !important;
         }
 
         .dark-mode .controls {
@@ -181,6 +383,7 @@
             font-size: 20px;
             color: #111;
             font-weight: 700;
+            padding-right: 80px;
         }
 
         .dark-mode .controls h2 {
@@ -269,25 +472,28 @@
             position: absolute;
             bottom: 30px;
             right: 20px;
-            background: rgba(255, 255, 255, 0.98);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
             z-index: 1000;
             border: 1px solid rgba(0,0,0,0.05);
+            max-width: 280px;
         }
 
         .dark-mode .legend {
-            background: rgba(17, 24, 39, 0.98);
+            background: rgba(17, 24, 39, 0.95);
             border: 1px solid rgba(255,255,255,0.1);
         }
 
         .legend h3 {
-            font-size: 14px;
-            margin-bottom: 12px;
+            font-size: 11px;
+            margin-bottom: 8px;
             color: #111;
-            font-weight: 700;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .dark-mode .legend h3 {
@@ -296,11 +502,11 @@
 
         .legend-scale {
             display: flex;
-            height: 24px;
-            border-radius: 6px;
+            height: 16px;
+            border-radius: 4px;
             overflow: hidden;
-            margin-bottom: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
         }
 
         .legend-scale div {
@@ -310,7 +516,7 @@
         .legend-labels {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
+            font-size: 9px;
             color: #666;
             font-weight: 600;
         }
@@ -538,49 +744,56 @@
     </div>
     
     <div class="controls">
-        <h2>🗺️ Dubai Real Estate Map</h2>
+        <button class="minimize-btn" id="minimizeBtn" title="Hide filters panel">
+            <span class="icon">⬅️</span>
+            <span class="btn-text">Hide</span>
+        </button>
         
-        <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="Search communities...">
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-label">Communities</div>
-                <div class="stat-value" id="totalCount">0</div>
+        <div class="control-content">
+            <h2>🗺️ Dubai Real Estate Map</h2>
+            
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Search communities...">
             </div>
-            <div class="stat-box green">
-                <div class="stat-label" id="stat1Label">Avg Sales PSF</div>
-                <div class="stat-value" id="avgValue">0</div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Communities</div>
+                    <div class="stat-value" id="totalCount">0</div>
+                </div>
+                <div class="stat-box green">
+                    <div class="stat-label" id="stat1Label">Avg Sales PSF</div>
+                    <div class="stat-value" id="avgValue">0</div>
+                </div>
             </div>
-        </div>
 
-        <div class="filter-group">
-            <label>Price Range (AED/sqft)</label>
-            <select id="priceRange">
-                <option value="all">All Prices</option>
-                <option value="0-1000">Under 1,000</option>
-                <option value="1000-1500">1,000 - 1,500</option>
-                <option value="1500-2000">1,500 - 2,000</option>
-                <option value="2000-3000">2,000 - 3,000</option>
-                <option value="3000-5000">3,000 - 5,000</option>
-                <option value="5000-999999">Above 5,000</option>
-            </select>
-        </div>
+            <div class="filter-group">
+                <label>Price Range (AED/sqft)</label>
+                <select id="priceRange">
+                    <option value="all">All Prices</option>
+                    <option value="0-1000">Under 1,000</option>
+                    <option value="1000-1500">1,000 - 1,500</option>
+                    <option value="1500-2000">1,500 - 2,000</option>
+                    <option value="2000-3000">2,000 - 3,000</option>
+                    <option value="3000-5000">3,000 - 5,000</option>
+                    <option value="5000-999999">Above 5,000</option>
+                </select>
+            </div>
 
-        <div class="filter-group">
-            <label>Time Period</label>
-            <select id="timePeriod">
-                <option value="Last_Month">Last Month</option>
-                <option value="Last_3_Months">Last 3 Months</option>
-                <option value="Last_6_Months">Last 6 Months</option>
-                <option value="Last_9_Months">Last 9 Months</option>
-                <option value="Last_12_Months">Last 12 Months</option>
-            </select>
-        </div>
+            <div class="filter-group">
+                <label>Time Period</label>
+                <select id="timePeriod">
+                    <option value="Last_Month">Last Month</option>
+                    <option value="Last_3_Months">Last 3 Months</option>
+                    <option value="Last_6_Months">Last 6 Months</option>
+                    <option value="Last_9_Months">Last 9 Months</option>
+                    <option value="Last_12_Months">Last 12 Months</option>
+                </select>
+            </div>
 
-        <button class="toggle-btn" id="toggleHeatmap">Toggle Heatmap</button>
+            <button class="toggle-btn" id="toggleHeatmap">Toggle Heatmap</button>
+        </div>
     </div>
 
     <div class="legend">
@@ -605,6 +818,15 @@
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
     <script>
+        // Wait for DOM and Leaflet to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if Leaflet loaded
+            if (typeof L === 'undefined') {
+                console.error('Leaflet failed to load');
+                alert('Map library failed to load. Please refresh the page.');
+                return;
+            }
+
         // ACCURATE COORDINATES
         const communityCoordinates = {
             "Al Barsha Apartments": [25.114000, 55.199000],
@@ -1329,6 +1551,30 @@ Leos Royal Villas,1624,0%,0%,0%,0%,0%`;
                 heatmapVisible = true;
             }
         });
+
+        // Minimize/Expand button functionality
+        const controls = document.querySelector('.controls');
+        const minimizeBtn = document.getElementById('minimizeBtn');
+        const btnIcon = minimizeBtn.querySelector('.icon');
+        const btnText = minimizeBtn.querySelector('.btn-text');
+        let isMinimized = false;
+
+        minimizeBtn.addEventListener('click', () => {
+            isMinimized = !isMinimized;
+            if (isMinimized) {
+                controls.classList.add('minimized');
+                btnIcon.textContent = '➡️';
+                btnText.textContent = 'Show';
+                minimizeBtn.title = 'Show filters panel';
+            } else {
+                controls.classList.remove('minimized');
+                btnIcon.textContent = '⬅️';
+                btnText.textContent = 'Hide';
+                minimizeBtn.title = 'Hide filters panel';
+            }
+        });
+        
+        }); // End DOMContentLoaded
     </script>
 </body>
 </html>
